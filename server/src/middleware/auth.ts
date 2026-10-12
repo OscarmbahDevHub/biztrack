@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { User } from "../models/User";
 
 export interface AuthRequest extends Request {
   user?: { id: string; role: "owner" | "staff" };
@@ -39,4 +40,23 @@ export function requireOwner(req: AuthRequest, res: Response, next: NextFunction
     return;
   }
   next();
+}
+
+// Open for the very first account; after that, only a logged-in owner
+export async function ownerOrFirstUser(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const userCount = await User.countDocuments();
+    if (userCount === 0) {
+      next();
+      return;
+    }
+    authenticate(req, res, () => requireOwner(req, res, next));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Something went wrong" });
+  }
 }
