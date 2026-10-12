@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import dns from "dns";
 import authRoutes from "./routes/auth";
 import productRoutes from "./routes/products";
+import saleRoutes from "./routes/sales";
 import { authenticate, AuthRequest } from "./middleware/auth";
 import { User } from "./models/User";
 
@@ -30,6 +31,7 @@ app.get("/api/health", (_req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
+app.use("/api/sales", saleRoutes);
 
 // Protected route: only works with a valid token
 app.get("/api/me", authenticate, async (req: AuthRequest, res) => {
