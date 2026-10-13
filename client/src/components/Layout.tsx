@@ -22,6 +22,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           <NavLink to="/sales" end>
             Sales
           </NavLink>
+          {user?.role === "owner" && <NavLink to="/staff">Staff</NavLink>}
         </nav>
         <div className="topbar-right">
           <span className="muted">
