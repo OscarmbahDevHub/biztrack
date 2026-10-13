@@ -7,6 +7,7 @@ import authRoutes from "./routes/auth";
 import productRoutes from "./routes/products";
 import saleRoutes from "./routes/sales";
 import invoiceRoutes from "./routes/invoices";
+import dashboardRoutes from "./routes/dashboard";
 import { authenticate, AuthRequest } from "./middleware/auth";
 import { User } from "./models/User";
 
@@ -34,6 +35,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/sales", saleRoutes);
 app.use("/api/invoices", invoiceRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 // Protected route: only works with a valid token
 app.get("/api/me", authenticate, async (req: AuthRequest, res) => {
