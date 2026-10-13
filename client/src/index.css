@@ -342,3 +342,82 @@ button.ghost {
   color: var(--muted);
   font-size: 0.9rem;
 }
+
+.stats {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin: 1rem 0 1.5rem;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+}
+
+.stat .value {
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.panel h3 {
+  margin-bottom: 1rem;
+}
+
+.table-wrap.flat {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.chart {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+}
+
+.bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.bar-track {
+  height: 160px;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.bar {
+  width: 60%;
+  max-width: 48px;
+  background: var(--accent);
+  border-radius: 6px 6px 0 0;
+}
+
+.bar-value {
+  font-size: 0.8rem;
+  color: var(--text);
+}
+
+.bar-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+}

@@ -16,6 +16,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       <header className="topbar">
         <h1>BizTrack</h1>
         <nav className="nav">
+          <NavLink to="/dashboard">Dashboard</NavLink>
           <NavLink to="/products">Products</NavLink>
           <NavLink to="/sales/new">New sale</NavLink>
           <NavLink to="/sales" end>

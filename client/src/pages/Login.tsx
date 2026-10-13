@@ -21,7 +21,7 @@ export default function Login() {
         body: { email, password },
       });
       saveSession(data.token, data.user);
-      navigate("/products");
+      navigate("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {

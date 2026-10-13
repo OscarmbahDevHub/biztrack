@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import type { ReactNode } from "react";
 import { getToken } from "./api";
 import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import NewSale from "./pages/NewSale";
 import Sales from "./pages/Sales";
@@ -16,6 +17,14 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route
+          path="/dashboard"
+          element={
+            <RequireLogin>
+              <Dashboard />
+            </RequireLogin>
+          }
+        />
         <Route
           path="/products"
           element={
@@ -40,7 +49,7 @@ export default function App() {
             </RequireLogin>
           }
         />
-        <Route path="*" element={<Navigate to="/products" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
   );
