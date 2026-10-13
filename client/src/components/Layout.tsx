@@ -18,6 +18,9 @@ export default function Layout({ children }: { children: ReactNode }) {
         <nav className="nav">
           <NavLink to="/products">Products</NavLink>
           <NavLink to="/sales/new">New sale</NavLink>
+          <NavLink to="/sales" end>
+            Sales
+          </NavLink>
         </nav>
         <div className="topbar-right">
           <span className="muted">

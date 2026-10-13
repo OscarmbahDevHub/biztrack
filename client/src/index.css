@@ -314,3 +314,31 @@ tbody tr:last-child td {
 .receipt-row input {
   min-width: 240px;
 }
+
+button.small {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+button.ghost {
+  background: transparent;
+  color: var(--accent);
+}
+
+.badge.warn {
+  color: #f2c98a;
+  border-color: #f2c98a;
+}
+
+.actions-cell {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.items-cell {
+  max-width: 280px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}

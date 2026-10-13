@@ -4,6 +4,7 @@ import { getToken } from "./api";
 import Login from "./pages/Login";
 import Products from "./pages/Products";
 import NewSale from "./pages/NewSale";
+import Sales from "./pages/Sales";
 
 // Sends you to the login page if you have no token
 function RequireLogin({ children }: { children: ReactNode }) {
@@ -28,6 +29,14 @@ export default function App() {
           element={
             <RequireLogin>
               <NewSale />
+            </RequireLogin>
+          }
+        />
+        <Route
+          path="/sales"
+          element={
+            <RequireLogin>
+              <Sales />
             </RequireLogin>
           }
         />
