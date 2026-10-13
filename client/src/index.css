@@ -290,3 +290,27 @@ tbody tr:last-child td {
   width: 100%;
   margin-top: 1.25rem;
 }
+
+.receipt {
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.receipt h3 {
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+
+.receipt-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.receipt-row input {
+  min-width: 240px;
+}

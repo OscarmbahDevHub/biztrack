@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { api } from "../api";
+import { api, downloadFile } from "../api";
 import Layout from "../components/Layout";
 
 type Product = {
@@ -16,6 +16,11 @@ type Sale = {
   customerName?: string;
 };
 
+type Invoice = {
+  _id: string;
+  invoiceNumber: string;
+};
+
 function money(amount: number): string {
   return amount.toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
@@ -28,8 +33,12 @@ export default function NewSale() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-  const [lastSale, setLastSale] = useState<Sale | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+
+  const [lastSale, setLastSale] = useState<Sale | null>(null);
+  const [invoice, setInvoice] = useState<Invoice | null>(null);
+  const [invoiceName, setInvoiceName] = useState("");
+  const [invoiceBusy, setInvoiceBusy] = useState(false);
 
   useEffect(() => {
     api<Product[]>("/products")
@@ -65,6 +74,7 @@ export default function NewSale() {
     setError("");
     setSaving(true);
     setLastSale(null);
+    setInvoice(null);
 
     try {
       const sale = await api<Sale>("/sales", {
@@ -78,6 +88,7 @@ export default function NewSale() {
         },
       });
       setLastSale(sale);
+      setInvoiceName(sale.customerName ?? "");
       setCart({});
       setCustomerName("");
       setReloadKey((key) => key + 1);
@@ -88,12 +99,76 @@ export default function NewSale() {
     }
   }
 
+  async function createInvoice() {
+    if (!lastSale) return;
+    setError("");
+    setInvoiceBusy(true);
+    try {
+      const created = await api<Invoice>("/invoices", {
+        method: "POST",
+        body: { saleId: lastSale._id, customerName: invoiceName.trim() },
+      });
+      setInvoice(created);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setInvoiceBusy(false);
+    }
+  }
+
+  async function downloadPdf() {
+    if (!invoice) return;
+    setError("");
+    setInvoiceBusy(true);
+    try {
+      await downloadFile(`/invoices/${invoice._id}/pdf`, `${invoice.invoiceNumber}.pdf`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setInvoiceBusy(false);
+    }
+  }
+
   return (
     <Layout>
       <h2>New sale</h2>
 
-      {lastSale && <p className="success">Sale recorded: {money(lastSale.total)}</p>}
       {error && <p className="error">{error}</p>}
+
+      {lastSale && (
+        <div className="receipt">
+          <h3>Sale recorded: {money(lastSale.total)}</h3>
+
+          {!invoice && (
+            <div className="receipt-row">
+              <div>
+                <label htmlFor="invoice-name">Customer name for the invoice</label>
+                <input
+                  id="invoice-name"
+                  type="text"
+                  value={invoiceName}
+                  onChange={(e) => setInvoiceName(e.target.value)}
+                />
+              </div>
+              <button onClick={createInvoice} disabled={invoiceBusy || !invoiceName.trim()}>
+                {invoiceBusy ? "Creating..." : "Create invoice"}
+              </button>
+            </div>
+          )}
+
+          {invoice && (
+            <div className="receipt-row">
+              <p>
+                Invoice <strong>{invoice.invoiceNumber}</strong> created.
+              </p>
+              <button onClick={downloadPdf} disabled={invoiceBusy}>
+                {invoiceBusy ? "Downloading..." : "Download PDF"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {loading && <p className="muted">Loading products...</p>}
 
       {!loading && (

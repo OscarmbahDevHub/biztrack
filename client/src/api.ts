@@ -52,3 +52,27 @@ export async function api<T>(
   }
   return data as T;
 }
+
+// Downloads a file (like an invoice PDF) from the API and saves it
+export async function downloadFile(path: string, filename: string): Promise<void> {
+  const token = getToken();
+
+  const res = await fetch(`${API_URL}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.message || "Download failed");
+  }
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
