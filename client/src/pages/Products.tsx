@@ -1,178 +1,300 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { api } from "../api";
+import { useNavigate } from "react-router-dom";
+import { api, clearSession, getUser } from "../api";
 import Layout from "../components/Layout";
 
 type Product = {
   _id: string;
   name: string;
   price: number;
+  costPrice?: number;
   quantity: number;
+  lowStockLevel: number;
 };
 
-type Sale = {
-  _id: string;
-  total: number;
-  customerName?: string;
+type FormState = {
+  name: string;
+  price: string;
+  costPrice: string;
+  quantity: string;
+  lowStockLevel: string;
+};
+
+const emptyForm: FormState = {
+  name: "",
+  price: "",
+  costPrice: "",
+  quantity: "0",
+  lowStockLevel: "5",
 };
 
 function money(amount: number): string {
   return amount.toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
-export default function NewSale() {
+export default function Products() {
+  const navigate = useNavigate();
+  const user = getUser();
+  const isOwner = user?.role === "owner";
+
   const [products, setProducts] = useState<Product[]>([]);
-  const [cart, setCart] = useState<Record<string, number>>({});
   const [query, setQuery] = useState("");
-  const [customerName, setCustomerName] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [lastSale, setLastSale] = useState<Sale | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<FormState>(emptyForm);
+  const [formError, setFormError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     api<Product[]>("/products")
       .then(setProducts)
-      .catch((err) => setError(err instanceof Error ? err.message : "Something went wrong"))
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : "Something went wrong";
+        if (message === "Please log in first" || message === "Invalid or expired token") {
+          clearSession();
+          navigate("/login");
+          return;
+        }
+        setError(message);
+      })
       .finally(() => setLoading(false));
-  }, [reloadKey]);
+  }, [navigate, reloadKey]);
 
-  function changeQuantity(product: Product, change: number) {
-    const current = cart[product._id] ?? 0;
-    const next = Math.max(0, Math.min(product.quantity, current + change));
-    const updated = { ...cart };
-    if (next === 0) {
-      delete updated[product._id];
-    } else {
-      updated[product._id] = next;
-    }
-    setCart(updated);
+  function openAdd() {
+    setEditingId(null);
+    setForm(emptyForm);
+    setFormError("");
+    setShowForm(true);
   }
 
-  const cartItems = products
-    .filter((p) => cart[p._id])
-    .map((p) => ({ product: p, quantity: cart[p._id] }));
+  function openEdit(product: Product) {
+    setEditingId(product._id);
+    setForm({
+      name: product.name,
+      price: String(product.price),
+      costPrice: String(product.costPrice ?? 0),
+      quantity: String(product.quantity),
+      lowStockLevel: String(product.lowStockLevel),
+    });
+    setFormError("");
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
-  const total = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  function closeForm() {
+    setShowForm(false);
+    setEditingId(null);
+    setFormError("");
+  }
 
-  const visible = products.filter((p) => p.name.toLowerCase().includes(query.toLowerCase()));
+  function updateField(field: keyof FormState, value: string) {
+    setForm({ ...form, [field]: value });
+  }
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSave(e: FormEvent) {
     e.preventDefault();
-    if (cartItems.length === 0) return;
+    setFormError("");
 
-    setError("");
+    const body = {
+      name: form.name.trim(),
+      price: Number(form.price),
+      costPrice: Number(form.costPrice),
+      quantity: Number(form.quantity),
+      lowStockLevel: Number(form.lowStockLevel),
+    };
+
+    const numbers = [body.price, body.costPrice, body.quantity, body.lowStockLevel];
+    if (!body.name) {
+      setFormError("Please enter a product name");
+      return;
+    }
+    if (numbers.some((n) => !Number.isFinite(n) || n < 0)) {
+      setFormError("Prices and quantities must be numbers that are zero or more");
+      return;
+    }
+
     setSaving(true);
-    setLastSale(null);
-
     try {
-      const sale = await api<Sale>("/sales", {
-        method: "POST",
-        body: {
-          customerName: customerName.trim() || undefined,
-          items: cartItems.map((item) => ({
-            productId: item.product._id,
-            quantity: item.quantity,
-          })),
-        },
-      });
-      setLastSale(sale);
-      setCart({});
-      setCustomerName("");
+      if (editingId) {
+        await api(`/products/${editingId}`, { method: "PUT", body });
+      } else {
+        await api("/products", { method: "POST", body });
+      }
+      closeForm();
       setReloadKey((key) => key + 1);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setFormError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setSaving(false);
     }
   }
 
+  async function handleDelete(product: Product) {
+    if (!window.confirm(`Delete "${product.name}"? This cannot be undone.`)) return;
+    setError("");
+    try {
+      await api(`/products/${product._id}`, { method: "DELETE" });
+      setReloadKey((key) => key + 1);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    }
+  }
+
+  const visible = products.filter((p) => p.name.toLowerCase().includes(query.toLowerCase()));
+
   return (
     <Layout>
-      <h2>New sale</h2>
+      <div className="toolbar">
+        <h2>Products</h2>
+        <div className="toolbar-right">
+          <input
+            className="search"
+            type="search"
+            placeholder="Search products..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          {isOwner && <button onClick={openAdd}>Add product</button>}
+        </div>
+      </div>
 
-      {lastSale && <p className="success">Sale recorded: {money(lastSale.total)}</p>}
-      {error && <p className="error">{error}</p>}
+      {isOwner && showForm && (
+        <form className="panel" onSubmit={handleSave}>
+          <h3>{editingId ? "Edit product" : "Add product"}</h3>
+
+          <div className="form-grid">
+            <div>
+              <label htmlFor="p-name">Name</label>
+              <input
+                id="p-name"
+                type="text"
+                value={form.name}
+                onChange={(e) => updateField("name", e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="p-price">Price (USD)</label>
+              <input
+                id="p-price"
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.price}
+                onChange={(e) => updateField("price", e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="p-cost">Cost price (USD)</label>
+              <input
+                id="p-cost"
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.costPrice}
+                onChange={(e) => updateField("costPrice", e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="p-qty">In stock</label>
+              <input
+                id="p-qty"
+                type="number"
+                min="0"
+                step="1"
+                value={form.quantity}
+                onChange={(e) => updateField("quantity", e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="p-low">Low-stock alert level</label>
+              <input
+                id="p-low"
+                type="number"
+                min="0"
+                step="1"
+                value={form.lowStockLevel}
+                onChange={(e) => updateField("lowStockLevel", e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          {formError && <p className="error">{formError}</p>}
+
+          <div className="form-actions">
+            <button type="submit" disabled={saving}>
+              {saving ? "Saving..." : editingId ? "Save changes" : "Add product"}
+            </button>
+            <button type="button" className="ghost" onClick={closeForm}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+
       {loading && <p className="muted">Loading products...</p>}
+      {error && <p className="error">{error}</p>}
 
       {!loading && (
-        <div className="sale-grid">
-          <section>
-            <input
-              className="search"
-              type="search"
-              placeholder="Search products..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-
-            <div className="product-list">
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th className="num">Price</th>
+                {isOwner && <th className="num">Cost</th>}
+                <th className="num">In stock</th>
+                <th>Status</th>
+                {isOwner && <th>Actions</th>}
+              </tr>
+            </thead>
+            <tbody>
               {visible.map((p) => {
-                const qty = cart[p._id] ?? 0;
+                const low = p.quantity <= p.lowStockLevel;
                 return (
-                  <div className="product-row" key={p._id}>
-                    <div>
-                      <strong>{p.name}</strong>
-                      <div className="muted">
-                        {money(p.price)} · {p.quantity} in stock
-                      </div>
-                    </div>
-                    <div className="qty">
-                      <button
-                        type="button"
-                        onClick={() => changeQuantity(p, -1)}
-                        disabled={qty === 0}
-                      >
-                        −
-                      </button>
-                      <span>{qty}</span>
-                      <button
-                        type="button"
-                        onClick={() => changeQuantity(p, 1)}
-                        disabled={qty >= p.quantity}
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
+                  <tr key={p._id}>
+                    <td>{p.name}</td>
+                    <td className="num">{money(p.price)}</td>
+                    {isOwner && <td className="num">{money(p.costPrice ?? 0)}</td>}
+                    <td className="num">{p.quantity}</td>
+                    <td>
+                      <span className={low ? "badge low" : "badge ok"}>
+                        {low ? "Low stock" : "In stock"}
+                      </span>
+                    </td>
+                    {isOwner && (
+                      <td>
+                        <div className="actions-cell">
+                          <button className="small ghost" onClick={() => openEdit(p)}>
+                            Edit
+                          </button>
+                          <button className="small danger" onClick={() => handleDelete(p)}>
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
                 );
               })}
-              {visible.length === 0 && <p className="muted">No products found.</p>}
-            </div>
-          </section>
-
-          <form className="cart" onSubmit={handleSubmit}>
-            <h3>Cart</h3>
-
-            {cartItems.length === 0 && <p className="muted">Add products to start a sale.</p>}
-
-            {cartItems.map((item) => (
-              <div className="cart-line" key={item.product._id}>
-                <span>
-                  {item.quantity} × {item.product.name}
-                </span>
-                <span>{money(item.product.price * item.quantity)}</span>
-              </div>
-            ))}
-
-            <div className="cart-total">
-              <span>Total</span>
-              <span>{money(total)}</span>
-            </div>
-
-            <label htmlFor="customer">Customer name (optional)</label>
-            <input
-              id="customer"
-              type="text"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-            />
-
-            <button className="wide" type="submit" disabled={saving || cartItems.length === 0}>
-              {saving ? "Recording..." : "Record sale"}
-            </button>
-          </form>
+              {visible.length === 0 && (
+                <tr>
+                  <td colSpan={isOwner ? 6 : 4} className="muted">
+                    No products found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       )}
     </Layout>
