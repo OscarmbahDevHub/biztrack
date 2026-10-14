@@ -450,3 +450,82 @@ button.danger {
   color: var(--danger);
   border-color: var(--danger);
 }
+
+@media (max-width: 600px) {
+  .page {
+    padding: 1rem;
+  }
+
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .nav {
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+  }
+
+  .topbar-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .toolbar-right {
+    width: 100%;
+  }
+
+  .search {
+    max-width: none;
+    flex: 1;
+  }
+
+  .stat .value {
+    font-size: 1.3rem;
+  }
+
+  .chart {
+    gap: 0.25rem;
+  }
+
+  .bar-value {
+    display: none;
+  }
+
+  .card {
+    padding: 1.5rem;
+  }
+
+  .receipt-row input {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .form-actions {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 600px) {
+  table {
+    min-width: 0;
+    font-size: 0.9rem;
+  }
+
+  th,
+  td {
+    padding: 0.6rem 0.6rem;
+  }
+
+  .badge {
+    padding: 0.1rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  button.small {
+    padding: 0.2rem 0.55rem;
+    font-size: 0.8rem;
+  }
+}
+
+
