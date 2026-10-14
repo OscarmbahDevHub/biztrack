@@ -30,6 +30,13 @@ export function getUser(): User | null {
   }
 }
 
+// If the server says our login is no longer valid, clear it and go to the login page
+function handleExpiredLogin(): never {
+  clearSession();
+  window.location.assign("/login");
+  throw new Error("Your session has expired. Please log in again.");
+}
+
 // One helper for talking to the BizTrack API
 export async function api<T>(
   path: string,
@@ -46,6 +53,11 @@ export async function api<T>(
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
 
+  // A wrong password on the login page is also a 401, so we skip that one
+  if (res.status === 401 && path !== "/auth/login") {
+    handleExpiredLogin();
+  }
+
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new Error(data.message || "Something went wrong");
@@ -60,6 +72,10 @@ export async function downloadFile(path: string, filename: string): Promise<void
   const res = await fetch(`${API_URL}${path}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
+
+  if (res.status === 401) {
+    handleExpiredLogin();
+  }
 
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
