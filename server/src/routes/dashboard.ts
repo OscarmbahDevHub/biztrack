@@ -60,9 +60,11 @@ router.get("/", authenticate, async (req: AuthRequest, res: Response) => {
       .select("name quantity lowStockLevel")
       .sort({ quantity: 1 });
 
-    const unpaidFilter = isOwner ? { status: "unpaid" } : { status: "unpaid", createdBy: userId };
+    const unpaidFilter = isOwner
+      ? { status: "unpaid" as const }
+      : { status: "unpaid" as const, createdBy: userId };
     const unpaidInvoices = await Invoice.countDocuments(unpaidFilter);
-
+    
     const data: Record<string, unknown> = {
       salesToday: today.sales,
       lowStock,
