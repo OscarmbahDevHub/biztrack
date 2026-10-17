@@ -13,12 +13,6 @@ const PORT = process.env.PORT || 5000;
 
 async function start() {
   try {
-    console.log(
-      "DEBUG variable names:",
-      Object.keys(process.env).filter((k) => !k.startsWith("npm_")).join(", ")
-    );
-    console.log("DEBUG MONGODB_URI set:", Boolean(process.env.MONGODB_URI));
-
     await mongoose.connect(process.env.MONGODB_URI as string);
     console.log("Connected to MongoDB");
 
