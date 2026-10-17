@@ -4,6 +4,21 @@ import { useNavigate } from "react-router-dom";
 import { api, saveSession } from "../api";
 import type { User } from "../api";
 
+const DEMO_ACCOUNTS = [
+  {
+    label: "Owner",
+    note: "full access, profit and reports",
+    email: "demo.owner@biztrack.com",
+    password: "DemoOwner123",
+  },
+  {
+    label: "Staff",
+    note: "sales only, no costs or profit",
+    email: "demo.staff@biztrack.com",
+    password: "DemoStaff123",
+  },
+];
+
 export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -58,6 +73,32 @@ export default function Login() {
         <button type="submit" disabled={loading}>
           {loading ? "Logging in..." : "Log in"}
         </button>
+
+        <div className="demo-box">
+          <strong>Try the demo</strong>
+          <p className="muted">
+            Pick a role to fill in the login, then press Log in. The server
+            may take up to a minute to wake up on the first try.
+          </p>
+          {DEMO_ACCOUNTS.map((account) => (
+            <button
+              key={account.label}
+              type="button"
+              className="demo-btn"
+              onClick={() => {
+                setEmail(account.email);
+                setPassword(account.password);
+                setError("");
+              }}
+            >
+              <span>{account.label}</span>
+              <small>{account.note}</small>
+              <small>
+                {account.email} / {account.password}
+              </small>
+            </button>
+          ))}
+        </div>
       </form>
     </main>
   );
