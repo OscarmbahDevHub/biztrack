@@ -12,7 +12,12 @@ import { User } from "./models/User";
 
 const app = express();
 
-app.use(cors());
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://biztrack-nu-wine.vercel.app",
+];
+
+app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 
 app.get("/api/health", (_req, res) => {
